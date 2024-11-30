@@ -1,5 +1,8 @@
 const express = require('express');
 const { MongoClient, ObjectId } = require('mongodb'); // Use the new MongoClient import
+const path = require("path");
+
+
 
 const app = express();
 
@@ -86,6 +89,23 @@ app.delete('/collection/:collectionName/:id', async (req, res, next) => {
     }
 });
 
+app.use('/static', express.static(path.join(__dirname, 'static'))); // Serve static files
+
+// Serve index.html
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// Catch-all for other routes (for SPAs or client-side routing)
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"));
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).send('Something broke!');
+});
 // Start the server
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
