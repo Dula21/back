@@ -55,56 +55,36 @@ app.post('/collection/:collectionName', (req, res, next) => {
     });
 });
 
-// New endpoint to handle order submissions
-app.post('/collection/orders', async (req, res, next) => {
-    const { lessons, customerDetails } = req.body;
 
-    if (!Array.isArray(lessons) || lessons.length === 0) {
-        return res.status(400).json({ message: 'No lessons provided in the order.' });
-    }
-
-    try {
-        // Process each lesson in the order
-        for (const lesson of lessons) {
-            const { lessonId, quantity } = lesson;
-
-            // Insert the order into the orders collection
-            await db.collection('orders').insertOne({
-                lessonId,
-                quantity,
-                customerDetails,
-                orderDate: new Date()
-            });
-
-            // Update the inventory for each lesson
-            await db.collection('lessons').updateOne(
-                { _id: new ObjectId(lessonId) },
-                { $inc: { availableInventory: -quantity } } // Decrement the inventory
-            );
-        }
-
-        res.json({ message: 'Order placed successfully!' });
-    } catch (error) {
-        console.error('Error processing order:', error);
-        res.status(500).json({ message: 'Failed to place the order. Please try again later.' });
-    }
-});
-
-// PUT method to update an object
+//update the object
 app.put('/collection/:collectionName/:id', (req, res, next) => {
     const id = req.params.id;
+
+    // Validate if the ID is a valid ObjectId
     if (!ObjectId.isValid(id)) {
+        console.error(`Invalid ObjectId: ${id}`); // Log invalid ID
         return res.status(400).json({ message: 'Invalid ID format' });
     }
+
+    // Check the body
+    console.log('Received body:', req.body);
+
     req.collection.updateOne(
         { _id: new ObjectId(id) },
         { $set: req.body },
-        (e, result) => {
-            if (e) return next(e);
-            res.json(result.result.n === 1 ? { msg: 'success' } : { msg: 'error' });
+        (err, result) => {
+            if (err) return next(err);
+
+            // Check if any document was modified
+            if (result.matchedCount === 0) {
+                return res.status(404).json({ message: 'Lesson not found' });
+            }
+
+            res.json({ msg: 'success', updated: result.modifiedCount });
         }
     );
 });
+
 
 // DELETE method to remove an object
 app.delete('/collection/:collectionName/:id', (req, res, next) => {
