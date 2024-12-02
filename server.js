@@ -13,7 +13,12 @@ app.use((req, res, next) => {
     res.setHeader("Access-Control-Allow-Headers", "Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers");
     next();
 });
-
+// the 'logger' middleware
+app.use(function (req, res, next) {
+    console.log("Request IP: " + req.url);
+    console.log("Request date: " + new Date());
+    next();
+});
 // MongoDB connection
 let db;
 MongoClient.connect('mongodb+srv://Admin:admin@gettingstarted.quhps.mongodb.net/', { useNewUrlParser: true, useUnifiedTopology: true }, (err, client) => {
@@ -48,6 +53,41 @@ app.post('/collection/:collectionName', (req, res, next) => {
         if (e) return next(e);
         res.send(results.ops);
     });
+});
+
+// New endpoint to handle order submissions
+app.post('/collection/orders', async (req, res, next) => {
+    const { lessons, customerDetails } = req.body;
+
+    if (!Array.isArray(lessons) || lessons.length === 0) {
+        return res.status(400).json({ message: 'No lessons provided in the order.' });
+    }
+
+    try {
+        // Process each lesson in the order
+        for (const lesson of lessons) {
+            const { lessonId, quantity } = lesson;
+
+            // Insert the order into the orders collection
+            await db.collection('orders').insertOne({
+                lessonId,
+                quantity,
+                customerDetails,
+                orderDate: new Date()
+            });
+
+            // Update the inventory for each lesson
+            await db.collection('lessons').updateOne(
+                { _id: new ObjectId(lessonId) },
+                { $inc: { availableInventory: -quantity } } // Decrement the inventory
+            );
+        }
+
+        res.json({ message: 'Order placed successfully!' });
+    } catch (error) {
+        console.error('Error processing order:', error);
+        res.status(500).json({ message: 'Failed to place the order. Please try again later.' });
+    }
 });
 
 // PUT method to update an object
@@ -85,23 +125,4 @@ app.delete('/collection/:collectionName/:id', (req, res, next) => {
 app.use('/static', express.static(path.join(__dirname, 'static')));
 
 // Serve index.html
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-// Catch-all for other routes (for SPAs or client-side routing)
-app.get("*", (req, res) => {
-    res.sendFile(path.join(__dirname, "index.html"));
-});
-
-// Error handling middleware
-app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).json({ message: 'Something broke!' });
-});
-
-// Start the server
-const port = process.env.PORT || 3000;
-app.listen(port, () => {
-    console.log(`Express.js server running at localhost:${port}`);
-});
+app.get
