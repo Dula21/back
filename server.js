@@ -40,6 +40,7 @@ app.param('collectionName', (req, res, next, collectionName) => {
     return next();
 });
 
+//Adding GET 
 app.get('/collection/:collectionName', (req, res, next) => {
     req.collection.find({}).toArray((e, results) => {
         if (e) return next(e);
@@ -101,7 +102,10 @@ app.delete('/collection/:collectionName/:id', (req, res, next) => {
     );
 });
 
-app.use('/static', express.static(path.join(__dirname, 'static'))); // Serve static files
+
+// Serve static files
+app.use('/static', express.static(path.join(__dirname, 'static'))); 
+
 
 // Serve index.html
 app.get('/', (req, res) => {
