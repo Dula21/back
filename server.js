@@ -101,8 +101,26 @@ app.delete('/collection/:collectionName/:id', (req, res, next) => {
     );
 });
 
-// Serve static files
-app.use('/static', express.static(path.join(__dirname, 'static')));
+app.use('/static', express.static(path.join(__dirname, 'static'))); // Serve static files
 
 // Serve index.html
-app.get
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// Catch-all forother routes (for SPAs or client-side routing)
+app.get("*", (req, res) => {
+    res.sendFile(path.join(__dirname, "index.html"));
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).send('Something broke!');
+});
+
+// Start the server
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+    console.log(`Express.js server running at localhost:${port}`);
+});
