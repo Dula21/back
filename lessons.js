@@ -111,5 +111,27 @@ const lessons = [
         alt: "french Lesson",
         location: "Dubai" ,// New location property
         rating: 3 // New rating property
+    },
+    {
+        id: 11,
+        title: "Information Technology",
+        description: "Enhance your IT skills!",
+        price: 1200,
+        availableInventory: 7,
+        image: "./static/Images/IT.png",
+        alt: "IT Lesson",
+        location: "Dubai" ,// New location property
+        rating: 5 // New rating property
+    },
+    {
+        id: 12,
+        title: "Artificial Intelligence",
+        description: "Enhance your AI skills!",
+        price: 1300,
+        availableInventory: 8,
+        image: "./static/Images/AI.png",
+        alt: "AI",
+        location: "Mauturius" ,// New location property
+        rating: 5 // New rating property
     }
 ];
