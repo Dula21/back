@@ -1,8 +1,16 @@
 const express = require('express');
 const { MongoClient, ObjectId } = require('mongodb'); // Correct import
 const path = require("path");
+const Lesson = require("./lessons"); // Assuming Lesson is your MongoDB model
+const cors = require('cors');
+//const router = express.Router();
 
+// Initialize app
 const app = express();
+
+// Middleware
+app.use(cors());
+
 
 app.use(express.json());
 app.set('port', 3000);
@@ -19,6 +27,8 @@ app.use(function (req, res, next) {
     console.log("Request date: " + new Date());
     next();
 });
+
+let lessonsCollection; // Declare the variable to store the collection reference
 // MongoDB connection
 let db;
 MongoClient.connect('mongodb+srv://Admin:admin@gettingstarted.quhps.mongodb.net/', { useNewUrlParser: true, useUnifiedTopology: true }, (err, client) => {
@@ -27,6 +37,7 @@ MongoClient.connect('mongodb+srv://Admin:admin@gettingstarted.quhps.mongodb.net/
         return;
     }
     db = client.db('Lessons');
+    lessonsCollection = db.collection("lessons"); // Assign the collection
     console.log('Connected to Database');
 });
 
@@ -40,6 +51,30 @@ app.param('collectionName', (req, res, next, collectionName) => {
     return next();
 });
 
+// Define the /search route
+app.get("/search", async (req, res) => {
+    const query = req.query.q;
+    if (!query) {
+      return res.status(400).json({ error: "Missing search query" });
+    }
+  
+    try {
+      const results = await lessonsCollection
+        .find({
+          $or: [
+            { title: { $regex: query, $options: "i" } },
+            { description: { $regex: query, $options: "i" } },
+            { location: { $regex: query, $options: "i" } },
+          ],
+        })
+        .toArray();
+      res.json({ results });
+    } catch (error) {
+      console.error("Error fetching lessons:", error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  });
+  
 //Adding GET 
 app.get('/collection/:collectionName', (req, res, next) => {
     req.collection.find({}).toArray((e, results) => {
@@ -128,3 +163,4 @@ const port = process.env.PORT || 3000;
 app.listen(port, () => {
     console.log(`Express.js server running at localhost:${port}`);
 });
+
